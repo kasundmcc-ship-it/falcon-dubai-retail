@@ -56,9 +56,32 @@ body { max-width:540px; margin:0 auto; padding-bottom:90px; }
 .checkout-btn { width:100%; padding:15px; margin-top:16px; border-radius:12px; background:var(--gold); color:#14110A; font-weight:700; font-size:16px; border:none; cursor:pointer; }
 
 /* Checkout form */
-.checkout-form input, .checkout-form textarea, .checkout-form select {
+.checkout-form input, .checkout-form textarea {
   width:100%; padding:12px; border-radius:10px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:14px; margin-bottom:10px;
 }
+
+/* Payment method cards */
+.payment-section { margin-bottom:14px; }
+.payment-label { font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; }
+.payment-grid { display:flex; flex-direction:column; gap:8px; }
+.payment-option { display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:12px; border:2px solid var(--hairline); background:var(--surface); cursor:pointer; transition:border-color .15s, background .15s; position:relative; }
+.payment-option.selected { border-color:var(--gold); background:rgba(212,162,76,0.07); }
+.payment-option.disabled { opacity:.45; cursor:not-allowed; }
+.payment-option .pm-icon { font-size:24px; min-width:32px; text-align:center; }
+.payment-option .pm-info { flex:1; }
+.payment-option .pm-name { font-size:14px; font-weight:600; }
+.payment-option .pm-desc { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.payment-option .pm-badge { font-size:10px; font-weight:700; padding:3px 7px; border-radius:99px; }
+.badge-active { background:rgba(76,175,125,0.15); color:var(--success); }
+.badge-soon { background:rgba(155,161,174,0.12); color:var(--text-dim); }
+.payment-option .pm-radio { width:18px; height:18px; border-radius:50%; border:2px solid var(--hairline); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.payment-option.selected .pm-radio { border-color:var(--gold); }
+.payment-option.selected .pm-radio::after { content:''; width:9px; height:9px; border-radius:50%; background:var(--gold); display:block; }
+
+/* Delivery charge box */
+.delivery-box { background:var(--surface-2); border-radius:10px; padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+.delivery-box .dlabel { color:var(--text-dim); }
+.delivery-box .dvalue { font-family:'Fraunces',serif; font-size:16px; color:var(--gold); font-weight:600; }
 
 /* Greeting */
 .greeting { padding:14px 16px 0; font-size:15px; }
@@ -102,13 +125,120 @@ body { max-width:540px; margin:0 auto; padding-bottom:90px; }
   <div class="checkout-form">
     <input type="text" id="coName" placeholder="Your name" readonly>
     <input type="tel" id="coPhone" placeholder="Mobile number" readonly>
-    <textarea id="coAddress" rows="3" placeholder="Delivery address (or leave blank for pickup)"></textarea>
-    <select id="coPayment">
-      <option>Cash on Delivery</option><option>Bank Transfer</option><option>Card</option>
-    </select>
+    <textarea id="coAddress" rows="2" placeholder="Delivery address (Street, City)"></textarea>
   </div>
-  <div style="font-family:'Fraunces',serif;font-size:20px;margin-bottom:12px">Total: <span id="coTotal" style="color:var(--gold)"></span></div>
-  <button class="checkout-btn" onclick="placeShopOrder()">Confirm Order</button>
+
+  <!-- Delivery charge -->
+  <div class="delivery-box">
+    <div>
+      <div style="font-weight:600">🚚 Delivery Charge</div>
+      <div class="dlabel" style="font-size:11px;margin-top:2px">Island-wide delivery</div>
+    </div>
+    <div class="dvalue" id="coDeliveryCharge">Rs. 0.00</div>
+  </div>
+
+  <!-- Payment Methods -->
+  <div class="payment-section">
+    <div class="payment-label">Select Payment Method</div>
+    <div class="payment-grid">
+
+      <!-- ACTIVE: Cash on Delivery -->
+      <div class="payment-option selected" id="pm-cod" onclick="selectPayment('cod')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">💵</div>
+        <div class="pm-info">
+          <div class="pm-name">Cash on Delivery</div>
+          <div class="pm-desc">Pay when your order arrives</div>
+        </div>
+        <span class="pm-badge badge-active">Available</span>
+      </div>
+
+      <!-- COMING SOON: Bank Transfer -->
+      <div class="payment-option disabled" id="pm-bank" onclick="showComingSoon('Bank Transfer')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">🏦</div>
+        <div class="pm-info">
+          <div class="pm-name">Bank Transfer</div>
+          <div class="pm-desc">Sampath · Peoples · BOC · HNB · Commercial</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+      <!-- COMING SOON: Card Payment -->
+      <div class="payment-option disabled" id="pm-card" onclick="showComingSoon('Card Payment')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">💳</div>
+        <div class="pm-info">
+          <div class="pm-name">Credit / Debit Card</div>
+          <div class="pm-desc">Visa · Mastercard · Amex</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+      <!-- COMING SOON: PayHere -->
+      <div class="payment-option disabled" id="pm-payhere" onclick="showComingSoon('PayHere')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">🟢</div>
+        <div class="pm-info">
+          <div class="pm-name">PayHere</div>
+          <div class="pm-desc">Sri Lanka's leading payment gateway</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+      <!-- COMING SOON: FriMi -->
+      <div class="payment-option disabled" id="pm-frimi" onclick="showComingSoon('FriMi')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">📱</div>
+        <div class="pm-info">
+          <div class="pm-name">FriMi</div>
+          <div class="pm-desc">Nations Trust Bank digital wallet</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+      <!-- COMING SOON: eZ Cash -->
+      <div class="payment-option disabled" id="pm-ezcash" onclick="showComingSoon('eZ Cash')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">📲</div>
+        <div class="pm-info">
+          <div class="pm-name">eZ Cash</div>
+          <div class="pm-desc">Dialog mobile money</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+      <!-- COMING SOON: mCash -->
+      <div class="payment-option disabled" id="pm-mcash" onclick="showComingSoon('mCash')">
+        <div class="pm-radio"></div>
+        <div class="pm-icon">📡</div>
+        <div class="pm-info">
+          <div class="pm-name">mCash</div>
+          <div class="pm-desc">Mobitel mobile payment</div>
+        </div>
+        <span class="pm-badge badge-soon">Coming Soon</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Order total summary -->
+  <div style="background:var(--surface-2);border-radius:10px;padding:14px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+      <span style="color:var(--text-dim)">Subtotal</span>
+      <span id="coSubtotal">Rs. 0.00</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px">
+      <span style="color:var(--text-dim)">Delivery</span>
+      <span id="coDeliverySummary">Rs. 0.00</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-family:'Fraunces',serif;font-size:20px;border-top:1px solid var(--hairline);padding-top:10px">
+      <span>Total</span>
+      <span id="coTotal" style="color:var(--gold)">Rs. 0.00</span>
+    </div>
+  </div>
+
+  <button class="checkout-btn" onclick="placeShopOrder()">✅ Confirm Order</button>
   <button class="btn" style="width:100%;margin-top:8px" onclick="backToCart()">← Back to Cart</button>
 </div>
 
