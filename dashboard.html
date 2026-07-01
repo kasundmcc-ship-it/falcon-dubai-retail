@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Bhavi Retail</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="brand"><div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div><div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div><div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div></div>
+    <a class="nav-link active" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto; padding-top:16px;">
+      <a class="nav-link" onclick="logout()">🚪 Log out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1>Dashboard</h1>
+        <div class="sub" id="todayLabel"></div>
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" onclick="toggleTheme()">Toggle theme</button>
+        <button class="btn btn-gold" onclick="loadDashboard()">Refresh</button>
+      </div>
+    </div>
+
+    <div class="kpi-grid" id="kpiGrid">
+      <!-- KPI cards injected by dashboard.js -->
+    </div>
+
+    <div class="section-header"><h2>Sales &amp; Profit Trend</h2></div>
+    <div class="chart-grid">
+      <div class="panel chart-wrap"><canvas id="revenueChart"></canvas></div>
+      <div class="panel chart-wrap"><canvas id="orderStatusChart"></canvas></div>
+    </div>
+
+    <div class="section-header"><h2>Movement &amp; Categories</h2></div>
+    <div class="chart-grid two">
+      <div class="panel chart-wrap"><canvas id="topSellingChart"></canvas></div>
+      <div class="panel chart-wrap"><canvas id="profitTrendChart"></canvas></div>
+    </div>
+
+    <div class="section-header"><h2>Low Stock Alerts</h2></div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Code</th><th>Product</th><th>Stock</th><th>Reorder Level</th><th>Status</th></tr></thead>
+        <tbody id="lowStockBody"><tr><td colspan="5"><div class="skel"></div></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="chart-grid two" style="margin-top:24px;">
+      <div>
+        <div class="section-header"><h2>Latest Orders</h2></div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Order</th><th>Customer</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody id="latestOrdersBody"><tr><td colspan="4"><div class="skel"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="section-header"><h2>Recent Customers</h2></div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Points</th></tr></thead>
+            <tbody id="recentCustomersBody"><tr><td colspan="3"><div class="skel"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>

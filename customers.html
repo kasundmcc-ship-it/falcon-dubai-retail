@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+.search-bar{display:flex;gap:10px;margin-bottom:16px}
+.search-bar input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid var(--hairline);background:var(--surface);color:var(--text);font-size:14px}
+.search-bar input:focus{outline:none;border-color:var(--gold)}
+.cust-detail{background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:24px;width:400px;max-width:95vw}
+.cust-detail h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:14px;color:var(--gold)}
+.detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--hairline);font-size:13px}
+.detail-row:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div>
+      <div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div>
+      <div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div>
+    </div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link active" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Customers</h1><div class="sub" id="custCount"></div></div>
+      <button class="btn" onclick="toggleTheme()">Theme</button>
+    </div>
+
+    <div class="kpi-grid" id="custKpis"></div>
+
+    <div class="section-header"><h2>Customer List</h2></div>
+    <div class="search-bar">
+      <input type="text" id="custSearch" placeholder="Search by name, phone or email…" oninput="filterCustomers()">
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Email</th><th>Address</th><th>Reward Points</th><th>Registered</th><th></th></tr></thead>
+        <tbody id="custBody"><tr><td colspan="8"><div class="skel" style="height:200px"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Customer detail + order history modal -->
+<div class="modal-overlay" id="custDetailOverlay" onclick="closeCustDetail(event)">
+  <div class="cust-detail">
+    <h3 id="cdName"></h3>
+    <div id="cdInfo"></div>
+    <div style="margin-top:16px;font-family:'Fraunces',serif;font-size:15px;margin-bottom:10px">Order History</div>
+    <div id="cdOrders" style="max-height:260px;overflow-y:auto"></div>
+    <button class="btn" style="margin-top:16px;width:100%" onclick="closeCustDetail()">Close</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+requireSession(['Owner','Assistant']);
+let allCustomers=[], allOrders=[];
+
+async function loadCustomers(){
+  const [cr,or]=await Promise.all([callApi('getCustomers'),callApi('getOrders',{})]);
+  if(cr.success){ allCustomers=cr.customers; renderKpis(); filterCustomers(); }
+  if(or.success) allOrders=or.orders;
+  document.getElementById('custCount').textContent=(allCustomers.length||0)+' registered customers';
+}
+
+function renderKpis(){
+  const total=allCustomers.length;
+  const thisMonth=new Date().toISOString().slice(0,7);
+  const newThisMonth=allCustomers.filter(c=>c.RegisteredAt&&String(c.RegisteredAt).startsWith(thisMonth)).length;
+  document.getElementById('custKpis').innerHTML=`
+    <div class="kpi-card"><div class="label">Total Customers</div><div class="stat-value figure">${total}</div></div>
+    <div class="kpi-card accent"><div class="label">New This Month</div><div class="stat-value figure">${newThisMonth}</div></div>
+  `;
+}
+
+function filterCustomers(){
+  const q=document.getElementById('custSearch').value.toLowerCase();
+  const filtered=allCustomers.filter(c=>!q||c.Name?.toLowerCase().includes(q)||c.Phone?.includes(q)||c.Email?.toLowerCase().includes(q));
+  renderCustomers(filtered);
+}
+
+function renderCustomers(list){
+  const body=document.getElementById('custBody');
+  if(!list.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:32px">No customers found</td></tr>';return;}
+  body.innerHTML=list.map(c=>`<tr>
+    <td class="product-code" style="font-size:11px">${c.CustomerID}</td>
+    <td style="font-weight:600">${c.Name}</td>
+    <td class="mono">${c.Phone||'—'}</td>
+    <td style="font-size:12px">${c.Email||'—'}</td>
+    <td style="font-size:12px;color:var(--text-dim)">${c.Address||'—'}</td>
+    <td><span style="color:var(--gold);font-weight:600">${c.RewardPoints||0} pts</span></td>
+    <td style="font-size:12px;color:var(--text-dim)">${c.RegisteredAt?new Date(c.RegisteredAt).toLocaleDateString():'—'}</td>
+    <td><button class="btn" style="padding:4px 10px;font-size:12px" onclick="showCustDetail('${c.CustomerID}')">View</button></td>
+  </tr>`).join('');
+}
+
+function showCustDetail(id){
+  const c=allCustomers.find(x=>x.CustomerID===id);
+  if(!c) return;
+  document.getElementById('cdName').textContent=c.Name;
+  document.getElementById('cdInfo').innerHTML=`
+    <div class="detail-row"><span>Phone</span><span class="mono">${c.Phone||'—'}</span></div>
+    <div class="detail-row"><span>Email</span><span>${c.Email||'—'}</span></div>
+    <div class="detail-row"><span>Address</span><span>${c.Address||'—'}</span></div>
+    <div class="detail-row"><span>Reward Points</span><span style="color:var(--gold);font-weight:600">${c.RewardPoints||0}</span></div>
+  `;
+  const orders=allOrders.filter(o=>o.CustomerID===id);
+  const ordEl=document.getElementById('cdOrders');
+  if(!orders.length){ordEl.innerHTML='<div style="color:var(--text-dim);font-size:13px">No orders yet</div>';}
+  else{
+    ordEl.innerHTML=orders.map(o=>`
+      <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--hairline);font-size:13px">
+        <div><span class="mono" style="font-size:11px">${o.OrderID}</span><br><span style="color:var(--text-dim);font-size:11px">${new Date(o.Date).toLocaleDateString()}</span></div>
+        <div style="text-align:right"><span style="color:var(--gold);font-weight:600">${fmtMoney(o.Total)}</span><br><span class="badge ${o.Status==='Completed'?'ok':o.Status==='Cancelled'?'low':'pending'}">${o.Status}</span></div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('custDetailOverlay').classList.add('open');
+}
+
+function closeCustDetail(e){
+  if(!e||e.target===document.getElementById('custDetailOverlay'))
+    document.getElementById('custDetailOverlay').classList.remove('open');
+}
+
+loadCustomers();
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+/* ============================================================
+   logo.css — Falcon Dubai neon snake logo, reusable across all pages
+   Usage: include this file + place .logo-neon-wrap div where needed
+   ============================================================ */
+
+.logo-neon-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 180px;
+  aspect-ratio: 1/1;
+  border-radius: 14px;
+  overflow: hidden;
+  margin: 0 auto 8px;
+  box-shadow: 0 0 20px rgba(212,175,55,0.25);
+}
+
+.logo-neon-wrap::before {
+  content: '';
+  position: absolute;
+  width: 150%;
+  height: 150%;
+  top: -25%;
+  left: -25%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 40%,
+    #cc9933 60%,
+    #ffd700 80%,
+    #ffffff 100%
+  );
+  animation: snakeChase 4s linear infinite;
+  z-index: 1;
+}
+
+.logo-neon-inner {
+  position: absolute;
+  inset: 4px;
+  background: #02060d;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.logo-neon-inner img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.logo-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  pointer-events: none;
+  box-shadow: inset 0 0 16px rgba(255,215,0,0.25);
+  animation: ambientGlow 2s infinite alternate ease-in-out;
+  z-index: 3;
+}
+
+/* Sidebar compact version */
+.logo-neon-wrap.sidebar-logo {
+  max-width: 120px;
+  margin: 0 auto 16px;
+}
+
+/* Login page large version */
+.logo-neon-wrap.login-logo {
+  max-width: 200px;
+  margin: 0 auto 20px;
+}
+
+@keyframes snakeChase {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes ambientGlow {
+  0%   { opacity: 0.5; filter: blur(4px); }
+  100% { opacity: 0.9; filter: blur(12px); }
+}

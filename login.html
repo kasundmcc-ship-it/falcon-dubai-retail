@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Login — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+body { background:#030914; display:flex; align-items:center; justify-content:center; min-height:100vh; flex-direction:column; gap:20px; }
+.login-card { background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:32px; width:340px; box-shadow:var(--shadow); }
+.role-tabs { display:flex; gap:6px; margin-bottom:20px; background:var(--surface-2); padding:4px; border-radius:10px; }
+.role-tab { flex:1; text-align:center; padding:8px; border-radius:8px; font-size:13px; font-weight:600; color:var(--text-dim); cursor:pointer; }
+.role-tab.active { background:var(--gold); color:#14110A; }
+.field { margin-bottom:14px; }
+.field label { font-size:12px; color:var(--text-dim); display:block; margin-bottom:6px; }
+.field input { width:100%; padding:11px 12px; border-radius:8px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:14px; }
+.field input:focus { outline:none; border-color:var(--gold); }
+.submit-btn { width:100%; padding:12px; margin-top:6px; }
+.err { color:var(--danger); font-size:13px; margin-top:10px; text-align:center; min-height:18px; }
+.cust-link { text-align:center; font-size:13px; color:var(--text-dim); margin-top:14px; }
+.cust-link a { color:var(--gold); font-weight:600; cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="logo-neon-wrap login-logo">
+  <div class="logo-glow"></div>
+  <div class="logo-neon-inner">
+    <img src="falcon dubai retail shop.png" alt="Falcon Dubai">
+  </div>
+</div>
+
+<div class="login-card">
+  <div style="text-align:center;margin-bottom:20px">
+    <div style="font-family:'Fraunces',serif;font-size:20px;color:var(--gold)">Falcon Dubai</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Staff Access</div>
+  </div>
+
+  <div class="role-tabs">
+    <div class="role-tab active" data-role="Owner">Owner</div>
+    <div class="role-tab" data-role="Assistant">Assistant</div>
+  </div>
+
+  <form id="loginForm">
+    <div class="field"><label>Name</label><input type="text" id="staffName" placeholder="Owner / Assistant" required></div>
+    <div class="field"><label>PIN</label><input type="password" id="staffPin" placeholder="4-digit PIN" required></div>
+    <button type="submit" class="btn btn-gold submit-btn">Sign in</button>
+    <div class="err" id="loginErr"></div>
+  </form>
+
+  <div class="cust-link">
+    Customer? <a onclick="window.location.href='customer-login.html'">Shop here →</a>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+// Auto-redirect if already logged in as staff
+(function() {
+  const s = getSession();
+  if (s && (s.role === 'Owner' || s.role === 'Assistant')) window.location.href = 'dashboard.html';
+})();
+
+let currentRole = 'Owner';
+document.querySelectorAll('.role-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentRole = tab.dataset.role;
+    document.getElementById('loginErr').textContent = '';
+  });
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('loginErr');
+  errEl.textContent = 'Signing in…';
+  const identifier = document.getElementById('staffName').value.trim();
+  const pin = document.getElementById('staffPin').value.trim();
+  if (!identifier || !pin) { errEl.textContent = 'Please fill in all fields.'; return; }
+  const r = await callApi('login', { identifier, pinOrPassword: pin, role: currentRole });
+  if (r.success) {
+    localStorage.setItem('bhavi_session', JSON.stringify(r.user));
+    window.location.href = 'dashboard.html';
+  } else {
+    errEl.textContent = r.error || 'Invalid name or PIN.';
+  }
+});
+</script>
+</body>
+</html>

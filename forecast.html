@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forecast — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+.period-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.ptab{padding:9px 20px;border-radius:8px;border:1px solid var(--hairline);font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;background:var(--surface)}
+.ptab.active{background:var(--gold);color:#14110A;border-color:transparent}
+.forecast-card{background:var(--surface);border:1px solid var(--gold-dim);border-radius:14px;padding:24px;text-align:center}
+.forecast-card .fc-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim)}
+.forecast-card .fc-value{font-family:'Fraunces',serif;font-size:32px;color:var(--gold);margin-top:8px}
+.forecast-card .fc-sub{font-size:12px;color:var(--text-dim);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div>
+      <div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div>
+      <div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div>
+    </div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link active" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Forecast</h1><div class="sub">Revenue & inventory projections based on historical sales</div></div>
+      <button class="btn" onclick="toggleTheme()">Theme</button>
+    </div>
+
+    <div class="period-tabs">
+      <div class="ptab active" onclick="loadForecast('week',this)">Next Week</div>
+      <div class="ptab" onclick="loadForecast('month',this)">Next Month</div>
+      <div class="ptab" onclick="loadForecast('3months',this)">Next 3 Months</div>
+      <div class="ptab" onclick="loadForecast('6months',this)">Next 6 Months</div>
+    </div>
+
+    <div class="kpi-grid" id="forecastKpis">
+      <div class="forecast-card"><div class="fc-label">Predicted Revenue</div><div class="fc-value" id="fRevenue">—</div><div class="fc-sub">3-month moving average</div></div>
+      <div class="forecast-card"><div class="fc-label">Predicted Profit</div><div class="fc-value" id="fProfit">—</div><div class="fc-sub">Based on current margins</div></div>
+    </div>
+
+    <div class="section-header"><h2>Historical Revenue Trend</h2></div>
+    <div class="panel" style="margin-bottom:24px"><div style="height:280px"><canvas id="forecastChart"></canvas></div></div>
+
+    <div class="section-header"><h2>Suggested Purchase Orders</h2></div>
+    <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px">Products at or below reorder threshold — suggested quantities to restock for the forecast period.</div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Code</th><th>Product</th><th>Current Stock</th><th>Suggested Purchase Qty</th><th>Priority</th></tr></thead>
+        <tbody id="suggestBody"><tr><td colspan="5"><div class="skel" style="height:100px"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+<script>
+requireSession(['Owner','Assistant']);
+let fChart=null;
+
+function chartC(){
+  const dark=document.documentElement.getAttribute('data-theme')!=='light';
+  return{text:dark?'#9BA1AE':'#6B6F76',grid:dark?'#262B35':'#E2DDD0',gold:'#D4A24C',teal:'#3FA796'};
+}
+
+async function loadForecast(period,el){
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('fRevenue').textContent='Loading…';
+  document.getElementById('fProfit').textContent='Loading…';
+
+  const r=await callApi('getForecast',{periodType:period});
+  if(!r.success){alert('Forecast failed: '+r.error);return;}
+
+  document.getElementById('fRevenue').textContent=fmtMoney(r.predictedRevenue);
+  document.getElementById('fProfit').textContent=fmtMoney(r.predictedProfit);
+
+  // Chart
+  if(fChart){fChart.destroy();fChart=null;}
+  const c=chartC();
+  const hist=r.historicalMonthly||[];
+  fChart=new Chart(document.getElementById('forecastChart'),{
+    type:'line',
+    data:{
+      labels:hist.map(m=>m.month),
+      datasets:[
+        {label:'Revenue',data:hist.map(m=>m.revenue),borderColor:c.gold,backgroundColor:'rgba(212,162,76,0.1)',fill:true,tension:0.35,pointRadius:4},
+        {label:'Profit',data:hist.map(m=>m.profit),borderColor:c.teal,backgroundColor:'rgba(63,167,150,0.08)',fill:true,tension:0.35,pointRadius:4}
+      ]
+    },
+    options:{
+      plugins:{legend:{labels:{color:c.text,font:{family:'Inter'}}}},
+      scales:{x:{ticks:{color:c.text},grid:{color:c.grid}},y:{ticks:{color:c.text},grid:{color:c.grid}}},
+      responsive:true,maintainAspectRatio:false
+    }
+  });
+
+  // Suggestions
+  const sugg=r.suggestedPurchases||[];
+  const body=document.getElementById('suggestBody');
+  if(!sugg.length){
+    body.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:20px">All stock levels look healthy for this period ✅</td></tr>';
+    return;
+  }
+  body.innerHTML=sugg.map(s=>{
+    const priority=s.currentStock<=0?'<span class="badge low">Urgent</span>':s.currentStock<=3?'<span class="badge pending">High</span>':'<span class="badge ok">Normal</span>';
+    return`<tr>
+      <td class="product-code">${s.code}</td>
+      <td>${s.name}</td>
+      <td style="font-family:'Fraunces',serif;font-size:16px">${s.currentStock}</td>
+      <td style="color:var(--gold);font-weight:700;font-family:'Fraunces',serif;font-size:18px">${s.suggestedQty}</td>
+      <td>${priority}</td>
+    </tr>`;
+  }).join('');
+}
+
+loadForecast('month',document.querySelector('.ptab.active'));
+</script>
+</body>
+</html>

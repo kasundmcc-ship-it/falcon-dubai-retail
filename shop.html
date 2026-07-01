@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bhavi Retail — Shop</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body { max-width:540px; margin:0 auto; padding-bottom:90px; }
+
+/* Top nav */
+.shop-nav { display:flex; align-items:center; gap:10px; padding:14px 16px; background:var(--surface); border-bottom:1px solid var(--hairline); position:sticky; top:0; z-index:50; }
+.shop-nav .logo { font-family:'Fraunces',serif; font-size:18px; color:var(--gold); flex:1; }
+.cart-btn { position:relative; background:var(--surface-2); border:1px solid var(--hairline); border-radius:10px; padding:8px 14px; cursor:pointer; font-size:22px; }
+.cart-count { position:absolute; top:-6px; right:-6px; background:var(--gold); color:#14110A; font-size:10px; font-weight:700; border-radius:999px; min-width:18px; height:18px; display:flex; align-items:center; justify-content:center; }
+
+/* Search */
+.shop-search { padding:12px 16px; }
+.shop-search input { width:100%; padding:12px 16px; border-radius:12px; border:1px solid var(--hairline); background:var(--surface); color:var(--text); font-size:15px; }
+.shop-search input:focus { outline:none; border-color:var(--gold); }
+
+/* Category pills */
+.cat-pills { display:flex; gap:8px; padding:0 16px 14px; overflow-x:auto; scrollbar-width:none; }
+.cat-pill { white-space:nowrap; padding:7px 16px; border-radius:999px; border:1px solid var(--hairline); font-size:13px; cursor:pointer; background:var(--surface); color:var(--text-dim); }
+.cat-pill.active { background:var(--gold); color:#14110A; border-color:transparent; font-weight:600; }
+
+/* Product grid */
+.product-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px; }
+.product-card { background:var(--surface); border:1px solid var(--hairline); border-radius:14px; overflow:hidden; cursor:pointer; transition:transform .15s, box-shadow .15s; }
+.product-card:active { transform:scale(.97); }
+.product-card .img-wrap { background:var(--surface-2); height:130px; display:flex; align-items:center; justify-content:center; font-size:42px; }
+.product-card .card-body { padding:12px; }
+.product-card .p-name { font-size:13px; font-weight:600; line-height:1.3; }
+.product-card .p-desc { font-size:11px; color:var(--text-dim); margin-top:3px; }
+.product-card .p-price { font-family:'Fraunces',serif; font-size:16px; color:var(--gold); margin-top:8px; }
+.product-card .stock-note { font-size:11px; color:var(--text-dim); margin-top:3px; }
+.product-card .add-btn { width:100%; margin-top:10px; padding:9px; border-radius:8px; background:var(--gold); color:#14110A; font-weight:700; font-size:13px; border:none; cursor:pointer; }
+.product-card .add-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Bottom bar (cart) */
+.bottom-bar { position:fixed; bottom:0; left:0; right:0; max-width:540px; margin:0 auto; background:var(--surface); border-top:1px solid var(--hairline); padding:14px 16px; display:flex; align-items:center; gap:12px; z-index:60; }
+.bottom-bar.hidden { display:none; }
+.bottom-bar .cart-summary { flex:1; font-size:13px; color:var(--text-dim); }
+.bottom-bar .cart-summary strong { color:var(--text); font-family:'Fraunces',serif; font-size:16px; }
+
+/* Cart drawer */
+.drawer-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:80; }
+.drawer-overlay.open { display:block; }
+.drawer { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:540px; background:var(--surface); border-radius:20px 20px 0 0; padding:20px 16px; max-height:90vh; overflow-y:auto; z-index:90; }
+.drawer h3 { font-family:'Fraunces',serif; font-size:18px; margin-bottom:16px; }
+.drawer-item { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--hairline); }
+.drawer-item .di-name { flex:1; font-size:14px; }
+.drawer-item .di-price { color:var(--gold); font-weight:600; font-size:14px; min-width:70px; text-align:right; }
+.qty-ctrl { display:flex; align-items:center; gap:8px; }
+.qty-ctrl button { width:28px; height:28px; border-radius:8px; border:1px solid var(--hairline); background:var(--surface-2); color:var(--text); cursor:pointer; font-size:16px; line-height:1; }
+.checkout-btn { width:100%; padding:15px; margin-top:16px; border-radius:12px; background:var(--gold); color:#14110A; font-weight:700; font-size:16px; border:none; cursor:pointer; }
+
+/* Checkout form */
+.checkout-form input, .checkout-form textarea, .checkout-form select {
+  width:100%; padding:12px; border-radius:10px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:14px; margin-bottom:10px;
+}
+
+/* Greeting */
+.greeting { padding:14px 16px 0; font-size:15px; }
+.greeting span { color:var(--gold); font-weight:600; }
+</style>
+</head>
+<body>
+
+<nav class="shop-nav">
+  <div class="logo">Bhavi Retail</div>
+  <div id="userChip" style="font-size:12px;color:var(--text-dim)"></div>
+  <div class="cart-btn" onclick="openCart()">
+    🛒<div class="cart-count" id="cartCountBadge" style="display:none">0</div>
+  </div>
+</nav>
+
+<div class="greeting">Hello, <span id="greetName">there</span> 👋</div>
+
+<div class="shop-search"><input type="text" id="shopSearch" placeholder="Search products…" oninput="applyFilters()"></div>
+
+<div class="cat-pills" id="catPills"></div>
+
+<div class="product-grid" id="productGrid">
+  <div style="grid-column:1/-1"><div class="skel" style="height:200px;border-radius:14px"></div></div>
+</div>
+
+<!-- Cart drawer -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeCart()"></div>
+<div class="drawer" id="cartDrawer" style="display:none">
+  <h3>My Cart</h3>
+  <div id="cartDrawerItems"></div>
+  <div style="margin-top:12px;font-size:13px;color:var(--text-dim);border-top:1px solid var(--hairline);padding-top:12px">
+    Total: <span id="cartDrawerTotal" style="font-family:'Fraunces',serif;font-size:20px;color:var(--gold)">Rs. 0.00</span>
+  </div>
+  <button class="checkout-btn" onclick="showCheckout()">Proceed to Checkout</button>
+</div>
+
+<!-- Checkout drawer -->
+<div class="drawer" id="checkoutDrawer" style="display:none">
+  <h3>Checkout</h3>
+  <div class="checkout-form">
+    <input type="text" id="coName" placeholder="Your name" readonly>
+    <input type="tel" id="coPhone" placeholder="Mobile number" readonly>
+    <textarea id="coAddress" rows="3" placeholder="Delivery address (or leave blank for pickup)"></textarea>
+    <select id="coPayment">
+      <option>Cash on Delivery</option><option>Bank Transfer</option><option>Card</option>
+    </select>
+  </div>
+  <div style="font-family:'Fraunces',serif;font-size:20px;margin-bottom:12px">Total: <span id="coTotal" style="color:var(--gold)"></span></div>
+  <button class="checkout-btn" onclick="placeShopOrder()">Confirm Order</button>
+  <button class="btn" style="width:100%;margin-top:8px" onclick="backToCart()">← Back to Cart</button>
+</div>
+
+<!-- Bottom cart bar -->
+<div class="bottom-bar hidden" id="bottomBar">
+  <div class="cart-summary">
+    <strong id="bbTotal">Rs. 0.00</strong><br>
+    <span id="bbItemCount">0 items</span>
+  </div>
+  <button class="btn btn-gold" onclick="openCart()">View Cart →</button>
+</div>
+
+<script src="app.js"></script>
+<script src="shop.js"></script>
+</body>
+</html>

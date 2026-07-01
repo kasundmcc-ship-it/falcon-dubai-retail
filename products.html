@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Products — Bhavi Retail</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+.search-bar { display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+.search-bar input { flex:1; min-width:200px; padding:10px 14px; border-radius:8px; border:1px solid var(--hairline); background:var(--surface); color:var(--text); font-size:14px; }
+.search-bar input:focus { outline:none; border-color:var(--gold); }
+.search-bar select { padding:10px 12px; border-radius:8px; border:1px solid var(--hairline); background:var(--surface); color:var(--text); font-size:13px; cursor:pointer; }
+
+/* Modal */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border:1px solid var(--hairline); border-radius:16px; width:640px; max-width:96vw; max-height:90vh; overflow-y:auto; padding:28px; }
+.modal h2 { font-family:'Fraunces',serif; font-size:20px; margin-bottom:20px; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-grid .full { grid-column:1/-1; }
+.field label { font-size:12px; color:var(--text-dim); display:block; margin-bottom:5px; }
+.field input, .field select, .field textarea { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:13px; }
+.field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:var(--gold); }
+.calc-row { background:var(--surface-2); border-radius:8px; padding:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:10px; }
+.calc-row .ci { text-align:center; }
+.calc-row .ci .val { font-family:'Fraunces',serif; font-size:18px; color:var(--gold); }
+.calc-row .ci .lbl { font-size:11px; color:var(--text-dim); margin-top:2px; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; padding-top:16px; border-top:1px solid var(--hairline); }
+.stat-chip { display:inline-block; padding:2px 8px; border-radius:6px; font-size:11px; font-weight:600; }
+.chip-active { background:rgba(76,175,125,0.15); color:var(--success); }
+.chip-inactive { background:rgba(155,161,174,0.15); color:var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div><div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div><div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div></div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link active" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Products</h1><div class="sub" id="productCount"></div></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn" onclick="toggleTheme()">Theme</button>
+        <button class="btn btn-gold" onclick="openModal()">+ Add Product</button>
+      </div>
+    </div>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="Search by name, code, category…" oninput="filterProducts()">
+      <select id="filterStatus" onchange="filterProducts()">
+        <option value="">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+      </select>
+      <select id="filterCategory" onchange="filterProducts()">
+        <option value="">All Categories</option>
+      </select>
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>Code</th><th>Product</th><th>Category</th>
+            <th>Buy Price</th><th>Sell Price</th><th>Profit%</th>
+            <th>Stock</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="productsBody">
+          <tr><td colspan="9"><div class="skel" style="height:300px"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Add Product</h2>
+    <div class="form-grid">
+      <div class="field"><label>Product Code</label><input type="text" id="fCode" placeholder="Auto-generated"></div>
+      <div class="field"><label>Barcode</label><input type="text" id="fBarcode" placeholder="Optional"></div>
+      <div class="field full"><label>Product Name *</label><input type="text" id="fName" placeholder="e.g. Washing Powder 1kg" required></div>
+      <div class="field"><label>Category</label>
+        <select id="fCategory">
+          <option>General</option><option>Food & Beverage</option><option>Personal Care</option>
+          <option>Household</option><option>Health</option><option>Spices</option><option>Cosmetics</option>
+        </select>
+      </div>
+      <div class="field"><label>Supplier</label><input type="text" id="fSupplier" value="Dubai Import"></div>
+      <div class="field"><label>Buying Price (Rs.)</label><input type="number" id="fBuyingPrice" step="0.01" oninput="recalc()" placeholder="0.00"></div>
+      <div class="field"><label>Selling Price (Rs.)</label><input type="number" id="fSellingPrice" step="0.01" oninput="recalc()" placeholder="0.00"></div>
+      <div class="field"><label>Shipping Cost (Rs.)</label><input type="number" id="fShipping" step="0.01" oninput="recalc()" placeholder="0.00"></div>
+      <div class="field"><label>Handling Cost (Rs.)</label><input type="number" id="fHandling" step="0.01" oninput="recalc()" placeholder="0.00"></div>
+      <div class="field"><label>Import Cost (Rs.)</label><input type="number" id="fImport" step="0.01" oninput="recalc()" placeholder="0.00"></div>
+      <div class="field"><label>Quantity in Stock</label><input type="number" id="fQty" step="0.01" oninput="recalc()" placeholder="0"></div>
+      <div class="field"><label>Reorder Level</label><input type="number" id="fReorder" placeholder="5"></div>
+      <div class="field full"><label>Description / Weight</label><input type="text" id="fDesc" placeholder="e.g. 1kg, 500ml, pack of 12"></div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fStatus"><option>Active</option><option>Inactive</option></select>
+      </div>
+    </div>
+
+    <!-- Live calculation display -->
+    <div style="margin-top:16px;">
+      <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Auto Calculated</div>
+      <div class="calc-row">
+        <div class="ci"><div class="val" id="cActualCost">Rs. 0</div><div class="lbl">Actual Cost</div></div>
+        <div class="ci"><div class="val" id="cProfit">Rs. 0</div><div class="lbl">Profit</div></div>
+        <div class="ci"><div class="val" id="cProfitPct">0%</div><div class="lbl">Profit %</div></div>
+        <div class="ci"><div class="val" id="cSuggestedPrice">Rs. 0</div><div class="lbl">Suggested Price</div></div>
+        <div class="ci"><div class="val" id="cStockValue">Rs. 0</div><div class="lbl">Stock Value</div></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="products.js"></script>
+</body>
+</html>

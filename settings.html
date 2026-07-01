@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.settings-grid{grid-template-columns:1fr}}
+.settings-panel{background:var(--surface);border:1px solid var(--hairline);border-radius:12px;padding:24px}
+.settings-panel h3{font-family:'Fraunces',serif;font-size:16px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--hairline);position:relative}
+.settings-panel h3::after{content:'';position:absolute;bottom:0;left:0;width:32px;height:2px;background:var(--gold)}
+.sfield{margin-bottom:14px}
+.sfield label{display:block;font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.sfield input,.sfield select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);background:var(--bg);color:var(--text);font-size:14px}
+.sfield input:focus,.sfield select:focus{outline:none;border-color:var(--gold)}
+.save-btn{margin-top:4px}
+.pin-row{display:flex;gap:10px}
+.pin-row input{flex:1}
+.success-msg{color:var(--success);font-size:13px;margin-top:8px;min-height:18px}
+.user-table th{background:var(--surface-2)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div>
+      <div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div>
+      <div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div>
+    </div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link active" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Settings</h1><div class="sub">Business configuration, notifications, and access</div></div>
+      <button class="btn" onclick="toggleTheme()">Toggle Theme</button>
+    </div>
+
+    <div class="settings-grid">
+
+      <!-- Business Settings -->
+      <div class="settings-panel">
+        <h3>Business Details</h3>
+        <div class="sfield"><label>Business Name</label><input type="text" id="sBusinessName" placeholder="Bhavi Retail"></div>
+        <div class="sfield"><label>Currency</label><select id="sCurrency"><option value="LKR">LKR — Sri Lankan Rupee</option><option value="USD">USD — US Dollar</option><option value="AED">AED — UAE Dirham</option></select></div>
+        <div class="sfield"><label>Monthly Sales Target (Rs.)</label><input type="number" id="sSalesTarget" placeholder="500000"></div>
+        <div class="sfield"><label>Low Stock Alert Threshold (units)</label><input type="number" id="sLowStock" placeholder="5"></div>
+        <button class="btn btn-gold save-btn" onclick="saveBusinessSettings()">Save Settings</button>
+        <div class="success-msg" id="bizMsg"></div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="settings-panel">
+        <h3>Notifications</h3>
+        <div class="sfield"><label>Owner Email</label><input type="email" id="sOwnerEmail" value="kasundmcc@gmail.com"></div>
+        <div class="sfield"><label>Assistant Email</label><input type="email" id="sAssistantEmail" placeholder="assistant@email.com"></div>
+        <div class="sfield"><label>Telegram Bot Token</label><input type="text" id="sTelegramToken" placeholder="123456:ABCdef..."></div>
+        <div class="sfield"><label>Telegram Owner Chat ID</label><input type="text" id="sTelegramOwner" placeholder="123456789"></div>
+        <div class="sfield"><label>Telegram Assistant Chat ID</label><input type="text" id="sTelegramAsst" placeholder="987654321"></div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px">⚠️ These values are stored in the Settings sheet. Update them there or paste the values above and save. Telegram Bot Token and Chat IDs also need to be updated inside your Apps Script constants.</div>
+        <button class="btn btn-gold save-btn" onclick="saveNotifSettings()">Save Notification Settings</button>
+        <div class="success-msg" id="notifMsg"></div>
+      </div>
+
+      <!-- Change PIN -->
+      <div class="settings-panel">
+        <h3>Change Staff PINs</h3>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">PINs are stored in the Users sheet. Change them here and they update immediately.</div>
+        <div class="sfield"><label>Role</label>
+          <select id="pinRole"><option value="Owner">Owner</option><option value="Assistant">Assistant</option></select>
+        </div>
+        <div class="sfield"><label>New PIN (4+ digits)</label>
+          <div class="pin-row">
+            <input type="password" id="newPin" placeholder="New PIN">
+            <input type="password" id="confirmPin" placeholder="Confirm PIN">
+          </div>
+        </div>
+        <button class="btn btn-gold save-btn" onclick="changePIN()">Update PIN</button>
+        <div class="success-msg" id="pinMsg"></div>
+      </div>
+
+      <!-- User Management -->
+      <div class="settings-panel">
+        <h3>Staff Accounts</h3>
+        <div class="panel" style="padding:0">
+          <table class="user-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Status</th></tr></thead>
+            <tbody id="usersBody"><tr><td colspan="4"><div class="skel"></div></td></tr></tbody>
+          </table>
+        </div>
+        <button class="btn btn-gold" style="margin-top:14px;width:100%" onclick="addAssistant()">+ Add Assistant</button>
+        <div class="success-msg" id="userMsg"></div>
+      </div>
+
+      <!-- Send Test Notification -->
+      <div class="settings-panel">
+        <h3>Test Notifications</h3>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">Send a test message to confirm Email and Telegram are working.</div>
+        <button class="btn btn-gold" style="width:100%" onclick="sendTestNotif()">Send Test Notification</button>
+        <div class="success-msg" id="testMsg"></div>
+      </div>
+
+      <!-- Web App URL -->
+      <div class="settings-panel">
+        <h3>System Info</h3>
+        <div class="sfield"><label>Web App URL (in app.js)</label><input type="text" id="sWebApp" readonly style="font-size:11px;font-family:monospace"></div>
+        <div class="sfield"><label>Google Sheet ID</label><input type="text" id="sSheetId" readonly value="1sJXmgXbQKSrQ_MxZYctnTWpzoA2QxmcG7_zpR6FduYo" style="font-size:11px;font-family:monospace"></div>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:8px">System built by Bhavi Retail. Powered by Google Sheets + Apps Script.</div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+<script>
+requireSession(['Owner']);
+
+async function loadSettings(){
+  // Read current settings from backend
+  const r=await callApi('getSettings');
+  if(r.success&&r.settings){
+    const s=r.settings;
+    if(s.BusinessName) document.getElementById('sBusinessName').value=s.BusinessName;
+    if(s.Currency) document.getElementById('sCurrency').value=s.Currency;
+    if(s.MonthlySalesTarget) document.getElementById('sSalesTarget').value=s.MonthlySalesTarget;
+    if(s.LowStockThreshold) document.getElementById('sLowStock').value=s.LowStockThreshold;
+  }
+  document.getElementById('sWebApp').value=API_URL;
+  loadUsers();
+}
+
+async function loadUsers(){
+  const r=await callApi('getUsers');
+  if(!r.success) return;
+  document.getElementById('usersBody').innerHTML=r.users.map(u=>`<tr>
+    <td style="font-size:11px;font-family:monospace">${u.UserID}</td>
+    <td style="font-weight:600">${u.Name}</td>
+    <td><span class="badge ok">${u.Role}</span></td>
+    <td><span class="badge ${u.Status==='Active'?'ok':'low'}">${u.Status}</span></td>
+  </tr>`).join('');
+}
+
+async function saveBusinessSettings(){
+  const r=await callApi('updateSettings',{
+    BusinessName:document.getElementById('sBusinessName').value,
+    Currency:document.getElementById('sCurrency').value,
+    MonthlySalesTarget:document.getElementById('sSalesTarget').value,
+    LowStockThreshold:document.getElementById('sLowStock').value
+  });
+  showMsg('bizMsg',r.success?'Settings saved ✅':'Failed: '+r.error,r.success);
+}
+
+async function saveNotifSettings(){
+  const r=await callApi('updateSettings',{
+    OwnerEmail:document.getElementById('sOwnerEmail').value,
+    AssistantEmail:document.getElementById('sAssistantEmail').value,
+    TelegramToken:document.getElementById('sTelegramToken').value,
+    TelegramOwnerChatId:document.getElementById('sTelegramOwner').value,
+    TelegramAsstChatId:document.getElementById('sTelegramAsst').value
+  });
+  showMsg('notifMsg',r.success?'Notification settings saved ✅ (remember to also update constants in Apps Script)':'Failed: '+r.error,r.success);
+}
+
+async function changePIN(){
+  const role=document.getElementById('pinRole').value;
+  const newPin=document.getElementById('newPin').value.trim();
+  const confirm=document.getElementById('confirmPin').value.trim();
+  if(!newPin||newPin.length<4){showMsg('pinMsg','PIN must be at least 4 digits.',false);return;}
+  if(newPin!==confirm){showMsg('pinMsg','PINs do not match.',false);return;}
+  const r=await callApi('updatePin',{role,newPin});
+  showMsg('pinMsg',r.success?`${role} PIN updated ✅`:'Failed: '+r.error,r.success);
+  document.getElementById('newPin').value='';
+  document.getElementById('confirmPin').value='';
+}
+
+async function addAssistant(){
+  const name=prompt('Assistant name:');
+  if(!name) return;
+  const pin=prompt('Set a PIN (4+ digits):');
+  if(!pin||pin.length<4){alert('PIN must be at least 4 digits.');return;}
+  const r=await callApi('addUser',{name,role:'Assistant',pin});
+  showMsg('userMsg',r.success?'Assistant added ✅':'Failed: '+r.error,r.success);
+  if(r.success) loadUsers();
+}
+
+async function sendTestNotif(){
+  document.getElementById('testMsg').textContent='Sending…';
+  const r=await callApi('testNotification');
+  showMsg('testMsg',r.success?'Test sent! Check Telegram and email ✅':'Failed: '+r.error,r.success);
+}
+
+function showMsg(id,msg,ok){
+  const el=document.getElementById(id);
+  el.textContent=msg;
+  el.style.color=ok?'var(--success)':'var(--danger)';
+  setTimeout(()=>el.textContent='',5000);
+}
+
+loadSettings();
+</script>
+</body>
+</html>

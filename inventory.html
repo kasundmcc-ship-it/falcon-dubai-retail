@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+.filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.filter-bar input,.filter-bar select{padding:9px 12px;border-radius:8px;border:1px solid var(--hairline);background:var(--surface);color:var(--text);font-size:13px}
+.filter-bar input{flex:1;min-width:160px}
+.adj-modal{background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:28px;width:360px;max-width:95vw}
+.adj-modal h3{font-family:'Fraunces',serif;font-size:18px;margin-bottom:16px}
+.adj-modal input,.adj-modal select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--hairline);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:10px}
+.adj-modal input:focus,.adj-modal select:focus{outline:none;border-color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div>
+      <div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div>
+      <div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div>
+    </div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link active" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Inventory</h1><div class="sub">Stock levels, movements and adjustments</div></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" onclick="toggleTheme()">Theme</button>
+        <button class="btn btn-gold" onclick="openAdj()">+ Adjust Stock</button>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="kpi-grid" id="invKpis"></div>
+
+    <div class="section-header"><h2>Current Stock</h2></div>
+    <div class="filter-bar">
+      <input type="text" id="invSearch" placeholder="Search product…" oninput="filterInv()">
+      <select id="invFilter" onchange="filterInv()">
+        <option value="">All Items</option>
+        <option value="low">Low Stock</option>
+        <option value="out">Out of Stock</option>
+        <option value="ok">In Stock</option>
+      </select>
+    </div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Code</th><th>Product</th><th>Category</th><th>Stock</th><th>Reorder Level</th><th>Stock Value</th><th>Status</th><th></th></tr></thead>
+        <tbody id="invBody"><tr><td colspan="8"><div class="skel" style="height:200px"></div></td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="section-header"><h2>Movement Log</h2></div>
+    <div class="panel">
+      <table>
+        <thead><tr><th>Date</th><th>Code</th><th>Product</th><th>Type</th><th>Change</th><th>Reason</th><th>Balance</th><th>By</th></tr></thead>
+        <tbody id="movBody"><tr><td colspan="8"><div class="skel" style="height:120px"></div></td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Stock adjustment modal -->
+<div class="modal-overlay" id="adjOverlay" onclick="closeAdjOnBg(event)">
+  <div class="adj-modal">
+    <h3>Adjust Stock</h3>
+    <select id="adjProduct"><option value="">Select product…</option></select>
+    <select id="adjType"><option value="IN">Stock In (add)</option><option value="OUT">Stock Out (remove)</option></select>
+    <input type="number" id="adjQty" placeholder="Quantity" min="1">
+    <input type="text" id="adjReason" placeholder="Reason (e.g. Purchase, Damage, Return)">
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn" style="flex:1" onclick="closeAdj()">Cancel</button>
+      <button class="btn btn-gold" style="flex:1" onclick="submitAdj()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+requireSession(['Owner','Assistant']);
+let invProducts=[], invMovements=[];
+
+async function loadInventory(){
+  const [pr, ir] = await Promise.all([callApi('getProducts'), callApi('getOrders',{})]);
+  if(pr.success){ invProducts=pr.products; renderKpis(); renderInv(invProducts); populateAdjSelect(); }
+  // Load movement log from Inventory sheet via a simple getInventoryLog action
+  const mr = await callApi('getInventoryLog');
+  if(mr.success){ invMovements=mr.log; renderMovements(mr.log); }
+}
+
+function renderKpis(){
+  const total=invProducts.length;
+  const low=invProducts.filter(p=>Number(p.Quantity)>0&&Number(p.Quantity)<=Number(p.ReorderLevel)).length;
+  const out=invProducts.filter(p=>Number(p.Quantity)<=0).length;
+  const value=invProducts.reduce((s,p)=>s+Number(p.StockValue||0),0);
+  document.getElementById('invKpis').innerHTML=`
+    <div class="kpi-card"><div class="label">Total Products</div><div class="stat-value figure">${total}</div></div>
+    <div class="kpi-card warn"><div class="label">Low Stock</div><div class="stat-value figure">${low}</div></div>
+    <div class="kpi-card warn"><div class="label">Out of Stock</div><div class="stat-value figure">${out}</div></div>
+    <div class="kpi-card accent"><div class="label">Total Stock Value</div><div class="stat-value figure">${fmtMoney(value)}</div></div>
+  `;
+}
+
+function filterInv(){
+  const q=document.getElementById('invSearch').value.toLowerCase();
+  const f=document.getElementById('invFilter').value;
+  const filtered=invProducts.filter(p=>{
+    const qty=Number(p.Quantity), reorder=Number(p.ReorderLevel);
+    const matchQ=!q||p.Name.toLowerCase().includes(q)||p.Code.toLowerCase().includes(q);
+    const matchF=!f||(f==='low'&&qty>0&&qty<=reorder)||(f==='out'&&qty<=0)||(f==='ok'&&qty>reorder);
+    return matchQ&&matchF;
+  });
+  renderInv(filtered);
+}
+
+function renderInv(list){
+  const body=document.getElementById('invBody');
+  if(!list.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:32px">No products found</td></tr>';return;}
+  body.innerHTML=list.map(p=>{
+    const qty=Number(p.Quantity),reorder=Number(p.ReorderLevel);
+    let badge,color;
+    if(qty<=0){badge='Out of Stock';color='low';}
+    else if(qty<=reorder){badge='Low Stock';color='pending';}
+    else{badge='In Stock';color='ok';}
+    return`<tr>
+      <td class="product-code">${p.Code}</td>
+      <td><div style="font-weight:600">${p.Name}</div><div style="font-size:11px;color:var(--text-dim)">${p.Description||''}</div></td>
+      <td>${p.Category}</td>
+      <td style="font-family:'Fraunces',serif;font-size:16px">${qty}</td>
+      <td>${reorder}</td>
+      <td class="price">${fmtMoney(p.StockValue)}</td>
+      <td><span class="badge ${color}">${badge}</span></td>
+      <td><button class="btn" style="padding:4px 10px;font-size:12px" onclick="openAdj('${p.Code}')">Adjust</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMovements(log){
+  const body=document.getElementById('movBody');
+  if(!log||!log.length){body.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-dim);padding:20px">No movements recorded yet</td></tr>';return;}
+  body.innerHTML=log.slice(0,100).map(m=>`<tr>
+    <td style="font-size:12px">${new Date(m.Date).toLocaleString()}</td>
+    <td class="product-code">${m.ProductCode}</td>
+    <td>${m.ProductName}</td>
+    <td><span class="badge ${m.Type==='IN'?'ok':'low'}">${m.Type}</span></td>
+    <td style="color:${m.QtyChange>0?'var(--success)':'var(--danger)'}">${m.QtyChange>0?'+':''}${m.QtyChange}</td>
+    <td>${m.Reason}</td>
+    <td style="font-weight:600">${m.Balance}</td>
+    <td style="font-size:12px;color:var(--text-dim)">${m.UpdatedBy}</td>
+  </tr>`).join('');
+}
+
+function populateAdjSelect(){
+  const sel=document.getElementById('adjProduct');
+  sel.innerHTML='<option value="">Select product…</option>'+invProducts.map(p=>`<option value="${p.Code}">${p.Name} (Stock: ${p.Quantity})</option>`).join('');
+}
+
+function openAdj(code){
+  if(code) document.getElementById('adjProduct').value=code;
+  document.getElementById('adjOverlay').classList.add('open');
+}
+function closeAdj(){document.getElementById('adjOverlay').classList.remove('open');}
+function closeAdjOnBg(e){if(e.target===document.getElementById('adjOverlay'))closeAdj();}
+
+async function submitAdj(){
+  const code=document.getElementById('adjProduct').value;
+  const type=document.getElementById('adjType').value;
+  const qty=parseInt(document.getElementById('adjQty').value)||0;
+  const reason=document.getElementById('adjReason').value.trim();
+  if(!code||!qty||!reason){alert('Please fill in all fields.');return;}
+  const session=getSession();
+  const r=await callApi('adjustStock',{code,qtyChange:type==='IN'?qty:-qty,reason,updatedBy:session?.name||'Staff'});
+  if(r.success){closeAdj();await loadInventory();}
+  else alert('Adjustment failed: '+r.error);
+}
+
+loadInventory();
+</script>
+</body>
+</html>

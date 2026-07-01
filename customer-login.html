@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falcon Dubai — Shop Login</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+body { background:#030914; display:flex; align-items:center; justify-content:center; min-height:100vh; flex-direction:column; gap:20px; padding:20px; }
+.login-card { background:var(--surface); border:1px solid var(--hairline); border-radius:16px; padding:32px; width:340px; box-shadow:var(--shadow); }
+.field { margin-bottom:14px; }
+.field label { font-size:12px; color:var(--text-dim); display:block; margin-bottom:6px; letter-spacing:.05em; text-transform:uppercase; }
+.field input { width:100%; padding:13px 14px; border-radius:10px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:15px; }
+.field input:focus { outline:none; border-color:var(--gold); }
+.hint { font-size:12px; color:var(--text-dim); margin-top:-8px; margin-bottom:12px; line-height:1.5; }
+.submit-btn { width:100%; padding:14px; font-size:15px; border-radius:10px; margin-top:4px; }
+.err { color:var(--danger); font-size:13px; margin-top:10px; text-align:center; min-height:18px; }
+</style>
+</head>
+<body>
+
+<div class="logo-neon-wrap login-logo">
+  <div class="logo-glow"></div>
+  <div class="logo-neon-inner">
+    <img src="falcon dubai retail shop.png" alt="Falcon Dubai">
+  </div>
+</div>
+
+<div style="text-align:center;color:var(--gold);font-family:'Fraunces',serif;font-size:22px">Falcon Dubai</div>
+<div style="text-align:center;color:var(--text-dim);font-size:13px;margin-top:-14px">Premium Imports from Dubai</div>
+
+<div class="login-card">
+  <div style="text-align:center;margin-bottom:22px">
+    <div style="font-size:16px;font-weight:600">Welcome! 👋</div>
+    <div style="font-size:13px;color:var(--text-dim);margin-top:4px">Enter your name and mobile to start shopping</div>
+  </div>
+
+  <form id="custLoginForm">
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="custName" placeholder="e.g. Kasun Perera" required autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Mobile Number</label>
+      <input type="tel" id="custPhone" placeholder="07XXXXXXXX" required autocomplete="tel">
+    </div>
+    <div class="hint">First time? We'll create your account automatically. No password needed — we'll remember you on this device.</div>
+    <button type="submit" class="btn btn-gold submit-btn">Start Shopping →</button>
+    <div class="err" id="custErr"></div>
+  </form>
+</div>
+
+<script src="app.js"></script>
+<script>
+// Auto-redirect if customer already remembered on this device
+(function() {
+  const s = getSession();
+  if (s && s.role === 'Customer') window.location.href = 'shop.html';
+})();
+
+document.getElementById('custLoginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('custErr');
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  if (!name || !phone) { errEl.textContent = 'Please enter your name and mobile number.'; return; }
+  errEl.textContent = 'Please wait…';
+  const r = await callApi('customerQuickLogin', { name, phone });
+  if (r.success) {
+    localStorage.setItem('bhavi_session', JSON.stringify(r.user));
+    window.location.href = 'shop.html';
+  } else {
+    errEl.textContent = r.error || 'Something went wrong. Please try again.';
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reports — Falcon Dubai</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+.report-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:20px}
+.rtab{padding:8px 16px;border-radius:8px;border:1px solid var(--hairline);font-size:13px;font-weight:600;color:var(--text-dim);cursor:pointer;background:var(--surface)}
+.rtab.active{background:var(--gold);color:#14110A;border-color:transparent}
+.range-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.range-bar select,.range-bar input{padding:8px 12px;border-radius:8px;border:1px solid var(--hairline);background:var(--surface);color:var(--text);font-size:13px}
+.report-section{display:none}.report-section.active{display:block}
+.export-bar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div>
+      <div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div>
+      <div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div>
+    </div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link active" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Reports</h1><div class="sub">Sales, profit, inventory and customer analysis</div></div>
+      <button class="btn" onclick="toggleTheme()">Theme</button>
+    </div>
+
+    <div class="report-tabs">
+      <div class="rtab active" onclick="switchTab('sales')">📦 Sales</div>
+      <div class="rtab" onclick="switchTab('profit')">💰 Profit</div>
+      <div class="rtab" onclick="switchTab('inventory')">🏭 Inventory</div>
+      <div class="rtab" onclick="switchTab('abc')">🔤 ABC Analysis</div>
+      <div class="rtab" onclick="switchTab('dead')">💀 Dead Stock</div>
+      <div class="rtab" onclick="switchTab('customers')">👥 Customers</div>
+    </div>
+
+    <!-- SALES REPORT -->
+    <div class="report-section active" id="tab-sales">
+      <div class="kpi-grid" id="salesKpis"></div>
+      <div class="section-header"><h2>Monthly Revenue</h2></div>
+      <div class="panel" style="margin-bottom:20px"><div style="height:260px"><canvas id="salesChart"></canvas></div></div>
+      <div class="section-header"><h2>Top Selling Products</h2></div>
+      <div class="panel">
+        <table><thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+        <tbody id="topSellingBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- PROFIT REPORT -->
+    <div class="report-section" id="tab-profit">
+      <div class="kpi-grid" id="profitKpis"></div>
+      <div class="section-header"><h2>Profit Trend</h2></div>
+      <div class="panel" style="margin-bottom:20px"><div style="height:260px"><canvas id="profitChart"></canvas></div></div>
+      <div class="section-header"><h2>Best Margin Products</h2></div>
+      <div class="panel">
+        <table><thead><tr><th>Product</th><th>Buy Price</th><th>Sell Price</th><th>Profit%</th></tr></thead>
+        <tbody id="profitBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- INVENTORY REPORT -->
+    <div class="report-section" id="tab-inventory">
+      <div class="kpi-grid" id="invRptKpis"></div>
+      <div class="section-header"><h2>Stock Value by Category</h2></div>
+      <div class="panel" style="margin-bottom:20px"><div style="height:260px"><canvas id="invChart"></canvas></div></div>
+      <div class="section-header"><h2>Low &amp; Out of Stock</h2></div>
+      <div class="panel">
+        <table><thead><tr><th>Code</th><th>Product</th><th>Stock</th><th>Reorder Level</th><th>Stock Value</th><th>Status</th></tr></thead>
+        <tbody id="invRptBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ABC ANALYSIS -->
+    <div class="report-section" id="tab-abc">
+      <div class="section-header"><h2>ABC Analysis — Revenue Contribution</h2></div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">
+        <strong style="color:var(--gold)">A</strong> items = top 80% of revenue &nbsp;|&nbsp;
+        <strong style="color:var(--teal)">B</strong> = next 15% &nbsp;|&nbsp;
+        <strong style="color:var(--text-dim)">C</strong> = bottom 5%
+      </div>
+      <div class="panel">
+        <table><thead><tr><th>Grade</th><th>Product</th><th>Revenue</th><th>Cumulative%</th></tr></thead>
+        <tbody id="abcBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- DEAD STOCK -->
+    <div class="report-section" id="tab-dead">
+      <div class="section-header"><h2>Dead Stock — Items Never Sold</h2></div>
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:14px">Products currently in stock that have never generated a sale. Consider promotion or clearance.</div>
+      <div class="panel">
+        <table><thead><tr><th>Code</th><th>Product</th><th>Stock</th><th>Stock Value</th><th>Category</th></tr></thead>
+        <tbody id="deadBody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS REPORT -->
+    <div class="report-section" id="tab-customers">
+      <div class="kpi-grid" id="custRptKpis"></div>
+      <div class="section-header"><h2>Customer Registrations Over Time</h2></div>
+      <div class="panel" style="margin-bottom:20px"><div style="height:260px"><canvas id="custChart"></canvas></div></div>
+    </div>
+
+  </main>
+</div>
+<script src="app.js"></script>
+<script src="reports.js"></script>
+</body>
+</html>

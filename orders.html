@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders — Bhavi Retail</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+.order-grid { display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:start; }
+.order-search { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.order-search input, .order-search select { padding:9px 12px; border-radius:8px; border:1px solid var(--hairline); background:var(--surface); color:var(--text); font-size:13px; }
+.order-search input { flex:1; min-width:150px; }
+
+/* New order panel */
+.order-builder { background:var(--surface); border:1px solid var(--hairline); border-radius:12px; padding:20px; position:sticky; top:20px; }
+.order-builder h3 { font-family:'Fraunces',serif; font-size:16px; margin-bottom:14px; }
+.order-builder input, .order-builder select { width:100%; padding:9px 12px; border-radius:8px; border:1px solid var(--hairline); background:var(--bg); color:var(--text); font-size:13px; margin-bottom:8px; }
+.order-builder input:focus, .order-builder select:focus { outline:none; border-color:var(--gold); }
+.cart-items { max-height:220px; overflow-y:auto; margin:10px 0; }
+.cart-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--hairline); font-size:13px; }
+.cart-item .name { flex:1; }
+.cart-item .qty-ctrl { display:flex; align-items:center; gap:6px; }
+.cart-item .qty-ctrl button { width:24px; height:24px; border-radius:6px; border:1px solid var(--hairline); background:var(--surface-2); color:var(--text); cursor:pointer; font-size:15px; line-height:1; }
+.order-totals { margin:12px 0; font-size:13px; }
+.order-totals .row { display:flex; justify-content:space-between; padding:4px 0; color:var(--text-dim); }
+.order-totals .row.total { font-weight:700; color:var(--text); font-size:15px; border-top:1px solid var(--hairline); padding-top:8px; margin-top:4px; }
+
+/* Product search dropdown */
+.prod-suggest { position:relative; }
+.prod-suggest .suggest-list { position:absolute; top:100%; left:0; right:0; background:var(--surface); border:1px solid var(--hairline); border-radius:8px; max-height:200px; overflow-y:auto; z-index:50; display:none; }
+.suggest-item { padding:10px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--hairline); }
+.suggest-item:hover { background:var(--surface-2); color:var(--gold); }
+
+/* Invoice modal */
+.invoice-modal { background:var(--surface); border-radius:12px; padding:32px; width:480px; max-width:95vw; }
+.invoice-header { text-align:center; border-bottom:2px solid var(--gold); padding-bottom:16px; margin-bottom:16px; }
+.invoice-header .biz { font-family:'Fraunces',serif; font-size:22px; color:var(--gold); }
+.invoice-table th { background:var(--surface-2); }
+.inv-row { display:flex; justify-content:space-between; padding:5px 0; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo-neon-wrap sidebar-logo"><div class="logo-glow"></div><div class="logo-neon-inner"><img src="falcon dubai retail shop.png" alt="Falcon Dubai"></div></div><div style="text-align:center;font-family:'Fraunces',serif;font-size:15px;color:var(--gold)">Falcon Dubai</div><div style="text-align:center;font-size:10px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;margin-top:2px">Retail Console</div></div>
+    <a class="nav-link" href="dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="products.html">📦 Products</a>
+    <a class="nav-link active" href="orders.html">🧾 Orders</a>
+    <a class="nav-link" href="inventory.html">🏭 Inventory</a>
+    <a class="nav-link" href="customers.html">👥 Customers</a>
+    <a class="nav-link" href="reports.html">📈 Reports</a>
+    <a class="nav-link" href="forecast.html">🔮 Forecast</a>
+    <a class="nav-link" href="settings.html">⚙️ Settings</a>
+    <div style="margin-top:auto;padding-top:16px;"><a class="nav-link" onclick="logout()">🚪 Log out</a></div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div><h1>Orders</h1><div class="sub" id="orderCount"></div></div>
+      <button class="btn" onclick="toggleTheme()">Theme</button>
+    </div>
+
+    <div class="order-grid">
+      <!-- Left: order list -->
+      <div>
+        <div class="order-search">
+          <input type="text" id="orderSearch" placeholder="Search order ID or customer…" oninput="filterOrders()">
+          <select id="orderStatusFilter" onchange="filterOrders()">
+            <option value="">All Status</option>
+            <option>Pending</option><option>Completed</option><option>Cancelled</option>
+          </select>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ordersBody"><tr><td colspan="8"><div class="skel" style="height:200px"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: new order builder -->
+      <div class="order-builder">
+        <h3>New Order</h3>
+        <input type="text" id="newCustomerName" placeholder="Customer name (or Walk-in)">
+        <input type="tel" id="newCustomerPhone" placeholder="Customer mobile (optional)">
+
+        <div class="prod-suggest">
+          <input type="text" id="productSearch" placeholder="Search & add product…" oninput="searchProducts(this.value)" autocomplete="off">
+          <div class="suggest-list" id="suggestList"></div>
+        </div>
+
+        <div class="cart-items" id="cartItems"><div style="color:var(--text-dim);font-size:13px;text-align:center;padding:20px">No items yet</div></div>
+
+        <div class="order-totals">
+          <div class="row"><span>Subtotal</span><span id="tSubtotal">Rs. 0.00</span></div>
+          <div class="row">
+            <span>Discount</span>
+            <input type="number" id="tDiscount" value="0" min="0" style="width:90px;padding:4px 8px;font-size:12px;text-align:right" oninput="updateTotals()">
+          </div>
+          <div class="row">
+            <span>Shipping</span>
+            <input type="number" id="tShipping" value="0" min="0" style="width:90px;padding:4px 8px;font-size:12px;text-align:right" oninput="updateTotals()">
+          </div>
+          <div class="row total"><span>TOTAL</span><span id="tTotal">Rs. 0.00</span></div>
+        </div>
+
+        <select id="paymentMethod" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--hairline);background:var(--bg);color:var(--text);font-size:13px;margin-bottom:8px;">
+          <option>Cash</option><option>Card</option><option>Bank Transfer</option><option>Credit</option>
+        </select>
+
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+          <input type="number" id="paidAmount" placeholder="Amount paid" style="flex:1" oninput="updateBalance()">
+          <div style="display:flex;flex-direction:column;justify-content:center;font-size:12px;color:var(--text-dim);min-width:80px">
+            Balance:<br><span id="balanceDisplay" style="color:var(--gold);font-weight:600">Rs. 0.00</span>
+          </div>
+        </div>
+
+        <textarea id="orderNotes" rows="2" style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--hairline);background:var(--bg);color:var(--text);font-size:13px;resize:vertical;margin-bottom:10px" placeholder="Delivery address / Notes"></textarea>
+
+        <button class="btn btn-gold" style="width:100%" onclick="submitOrder()">Place Order</button>
+        <button class="btn" style="width:100%;margin-top:6px" onclick="clearCart()">Clear</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Invoice modal -->
+<div class="modal-overlay" id="invoiceOverlay" onclick="closeInvoice(event)">
+  <div class="invoice-modal">
+    <div class="invoice-header">
+      <div class="biz">Bhavi Retail</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-top:4px">Import & Retail</div>
+      <div style="font-size:13px;margin-top:8px">INVOICE</div>
+    </div>
+    <div id="invoiceContent"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;justify-content:flex-end;">
+      <button class="btn" onclick="printInvoice()">Print</button>
+      <button class="btn" onclick="closeInvoice()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="orders.js"></script>
+</body>
+</html>
