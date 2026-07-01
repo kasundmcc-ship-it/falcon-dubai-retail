@@ -4,7 +4,7 @@
  */
 
 const session = getSession();
-if (!session || session.role !== 'Customer') window.location.href = 'login.html';
+if (!session || session.role !== 'Customer') window.location.href = "customer-login.html";
 
 document.getElementById('greetName').textContent = session.name;
 document.getElementById('userChip').textContent = session.phone;
@@ -151,15 +151,47 @@ function renderCartDrawer() {
   document.getElementById('cartDrawerTotal').textContent = fmtMoney(total);
 }
 
+// ===== Payment Selection =====
+let selectedPayment = 'cod';
+const DELIVERY_CHARGE = 350; // Rs. 350 flat island-wide — change as needed
+
+function selectPayment(method) {
+  // Only cod is active right now — ignore clicks on disabled options
+  if (method !== 'cod') return;
+  selectedPayment = method;
+  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('pm-' + method).classList.add('selected');
+}
+
+function showComingSoon(name) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--hairline);border-radius:10px;padding:12px 20px;font-size:13px;color:var(--text-dim);z-index:200;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.4)';
+  toast.textContent = name + ' — Coming Soon! 🚀';
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
 function showCheckout() {
   if (!shopCart.length) { alert('Add items to your cart first.'); return; }
   document.getElementById('cartDrawer').style.display = 'none';
   document.getElementById('checkoutDrawer').style.display = 'block';
-  const total = shopCart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
-  document.getElementById('coTotal').textContent = fmtMoney(total);
+
+  const subtotal = shopCart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const total = subtotal + DELIVERY_CHARGE;
+
   document.getElementById('coName').value = session.name;
   document.getElementById('coPhone').value = session.phone;
   if (session.address) document.getElementById('coAddress').value = session.address;
+
+  document.getElementById('coSubtotal').textContent = fmtMoney(subtotal);
+  document.getElementById('coDeliveryCharge').textContent = fmtMoney(DELIVERY_CHARGE);
+  document.getElementById('coDeliverySummary').textContent = fmtMoney(DELIVERY_CHARGE);
+  document.getElementById('coTotal').textContent = fmtMoney(total);
+
+  // Reset to COD
+  selectedPayment = 'cod';
+  document.querySelectorAll('.payment-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('pm-cod').classList.add('selected');
 }
 
 function backToCart() {
@@ -170,17 +202,21 @@ function backToCart() {
 // ===== Place Order =====
 async function placeShopOrder() {
   const address = document.getElementById('coAddress').value.trim();
-  const payment = document.getElementById('coPayment').value;
-  const total = shopCart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  if (!address) { alert('Please enter your delivery address.'); return; }
+
+  const subtotal = shopCart.reduce((s, i) => s + i.unitPrice * i.qty, 0);
+  const total = subtotal + DELIVERY_CHARGE;
+
+  const paymentLabel = selectedPayment === 'cod' ? 'Cash on Delivery' : selectedPayment;
 
   const r = await callApi('placeOrder', {
     customerId: session.id,
     customerName: session.name,
     items: shopCart,
     discount: 0,
-    shipping: 0,
-    paymentMethod: payment,
-    paidAmount: payment === 'Cash on Delivery' ? 0 : total,
+    shipping: DELIVERY_CHARGE,
+    paymentMethod: paymentLabel,
+    paidAmount: 0, // COD = not paid yet
     deliveryAddress: address,
     createdBy: session.name,
     notes: ''
@@ -190,7 +226,7 @@ async function placeShopOrder() {
     shopCart = [];
     updateCartUI();
     closeCart();
-    showOrderConfirmation(r.orderId, r.total);
+    showOrderConfirmation(r.orderId, total);
   } else {
     alert('Order failed: ' + r.error);
   }
