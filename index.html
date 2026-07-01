@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Falcon Dubai — Shop</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="logo.css">
+<style>
+body {
+  background: #030914;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 20px;
+  padding: 24px;
+}
+.tagline {
+  font-family: 'Fraunces', serif;
+  font-size: 26px;
+  color: var(--gold);
+  text-align: center;
+}
+.tagline small {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.shop-btn {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  padding: 18px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  background: var(--gold);
+  color: #14110A;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.shop-btn:hover { opacity: 0.9; transform: scale(1.02); }
+.tagline-sub {
+  font-size: 13px;
+  color: var(--text-dim);
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.6;
+}
+</style>
+</head>
+<body>
+
+<div class="logo-neon-wrap login-logo">
+  <div class="logo-glow"></div>
+  <div class="logo-neon-inner">
+    <img src="falcon dubai retail shop.png" alt="Falcon Dubai">
+  </div>
+</div>
+
+<div class="tagline">
+  Falcon Dubai
+  <small>Premium Imports · Sri Lanka</small>
+</div>
+
+<div class="tagline-sub">
+  Quality products imported directly from Dubai, delivered to your door.
+</div>
+
+<a class="shop-btn" href="customer-login.html">🛍️ Start Shopping</a>
+
+<script src="app.js"></script>
+<script>
+  // If customer already logged in, go straight to shop
+  const s = getSession();
+  if (s && s.role === 'Customer') window.location.href = 'shop.html';
+</script>
+</body>
+</html>
